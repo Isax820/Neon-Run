@@ -1,6 +1,9 @@
 import pygame
+import threading
 import random
 import sys
+
+from rpc import *
 
 pygame.init()
 
@@ -28,6 +31,10 @@ clock = pygame.time.Clock()
 font_big   = pygame.font.SysFont("consolas", 64, bold=True)
 font_med   = pygame.font.SysFont("consolas", 32, bold=True)
 font_small = pygame.font.SysFont("consolas", 22)
+
+thread_rpc = threading.Thread(target=run_rpc, daemon=True)
+
+thread_rpc.start()
 
 def draw_neon_rect(surface, color, rect, width=2, glow=6):
     for i in range(glow, 0, -1):
