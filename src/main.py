@@ -248,7 +248,9 @@ class Coin:
 
 class Game:
     def __init__(self):
+
         self.reset()
+
         self.high_score = 0
 
     def reset(self):
