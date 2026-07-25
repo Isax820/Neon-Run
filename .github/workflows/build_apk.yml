@@ -1,4 +1,4 @@
-name: Build APK
+name: Build APK - v1.0
 
 on:
   workflow_dispatch:
@@ -12,11 +12,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build APK
-        uses: ArtemSBulgakov/buildozer-action@v1
+      - name: Build APK with official Buildozer image
+        uses: addnab/docker-run-action@v3
         with:
-          workdir: android
-          buildozer_version: stable
+          image: kivy/buildozer:latest
+          options: -v ${{ github.workspace }}/android:/home/user/hostcwd
+          run: |
+            cd /home/user/hostcwd
+            buildozer android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
