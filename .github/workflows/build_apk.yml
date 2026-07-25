@@ -1,7 +1,9 @@
 name: Build APK
 
 on:
+  # Lancement manuel depuis l'onglet "Actions" sur GitHub
   workflow_dispatch:
+  # Lancement automatique a chaque push touchant le dossier Android
   push:
     paths:
       - 'src/android/**'
@@ -10,20 +12,28 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout du repo
         uses: actions/checkout@v4
 
-      - name: Build APK with official Buildozer image
+      - name: Build APK avec l'image officielle Buildozer
         uses: addnab/docker-run-action@v3
         with:
           image: kivy/buildozer:latest
-          options: -v ${{ github.workspace }}/android:/home/user/hostcwd
+          options: -v ${{ github.workspace }}/src/android:/home/user/hostcwd
           run: |
             cd /home/user/hostcwd
+
+            # Buildozer exige un point d'entree nomme exactement main.py
+            # -> copie temporaire depuis main_android.py, uniquement
+            #    dans le conteneur de build (ne touche pas le repo)
+            cp main_android.py main.py
+
+            # "yes |" repond automatiquement aux prompts interactifs
+            # de Buildozer (avertissement root, licences SDK, etc.)
             yes | buildozer android debug
 
-      - name: Upload APK
+      - name: Upload de l'APK genere
         uses: actions/upload-artifact@v4
         with:
           name: neon-run-apk
-          path: android/bin/*.apk
+          path: src/android/bin/*.apk
