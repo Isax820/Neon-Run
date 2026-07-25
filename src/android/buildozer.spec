@@ -15,7 +15,10 @@ version = 1.0
 # pas besoin de pypresence ici : le RPC Discord est deja
 # rendu optionnel dans le code (try/except), donc on ne l'installe
 # meme pas pour Android.
-requirements = python3,pygame
+# pygame utilise un en-tete interne de CPython (longintrepr.h)
+# supprime depuis Python 3.11 -> on force la compilation avec
+# Python 3.10, qui a encore cet en-tete.
+requirements = python3==3.10.14,pygame
 
 # --- Orientation / affichage ---
 # Le jeu est concu en 900x600, plus large que haut -> paysage
@@ -40,7 +43,7 @@ android.accept_sdk_license = True
 android.api = 33
 android.minapi = 21
 android.ndk = 25b
-android.archs = arm64-v8a, armeabi-v7a
+android.archs = arm64-v8a
 
 # Empeche l'app de se fermer si le telephone tourne l'ecran
 # (puisqu'on force le paysage de toute facon)
