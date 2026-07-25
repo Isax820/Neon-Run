@@ -8,7 +8,6 @@ def run_rpc():
     
     try:
         RPC.connect()
-        RPC.update(state="v1.0", details="Jumping sessions")
         
         while True:
             time.sleep(15)
