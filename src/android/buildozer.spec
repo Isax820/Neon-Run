@@ -18,7 +18,8 @@ version = 1.0
 # pygame utilise un en-tete interne de CPython (longintrepr.h)
 # supprime depuis Python 3.11 -> on force la compilation avec
 # Python 3.10, qui a encore cet en-tete.
-requirements = python3==3.10.14,pygame
+# hostpython3 doit obligatoirement avoir la meme version que python3.
+requirements = python3==3.10.14,hostpython3==3.10.14,pygame
 
 # --- Orientation / affichage ---
 # Le jeu est concu en 900x600, plus large que haut -> paysage
