@@ -31,6 +31,11 @@ fullscreen = 1
 # permission particuliere n'est necessaire pour l'instant.
 android.permissions =
 
+# Accepte automatiquement les licences du SDK Android.
+# Indispensable en CI (GitHub Actions) : sans ca, le build reste
+# bloque en attendant une confirmation manuelle qui ne viendra jamais.
+android.accept_sdk_license = True
+
 # --- Config Android ---
 android.api = 33
 android.minapi = 21
