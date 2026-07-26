@@ -5,16 +5,20 @@ title = Neon Run
 package.name = neonrun
 package.domain = org.isax820
 
-# Dossier contenant main.py (le code adapté avec les controles tactiles)
+# Dossier contenant main.py (le code adapte avec les controles tactiles)
 source.dir = .
 source.include_exts = py,png,jpg,jpeg,ttf,ogg,wav
 
 version = 2026.7.26
 
+# Empeche le calcul automatique (parfois casse) du versionCode Android
+# a partir de la version ci-dessus -> on le fixe nous-memes.
+android.numeric_version = 1
+
 # --- Dependances Python ---
-# pas besoin de pypresence ici : le RPC Discord est deja
-# rendu optionnel dans le code (try/except), donc on ne l'installe
-# meme pas pour Android.
+# pas besoin de pypresence ici : le RPC Discord est deja rendu
+# optionnel dans le code (try/except), donc on ne l'installe meme
+# pas pour Android.
 # pygame utilise un en-tete interne de CPython (longintrepr.h)
 # supprime depuis Python 3.11 -> on force la compilation avec
 # Python 3.10, qui a encore cet en-tete.
