@@ -35,7 +35,7 @@ def present():
     rw, rh = real_screen.get_size()
     scale = min(rw / WIDTH, rh / HEIGHT)
     new_w, new_h = int(WIDTH * scale), int(HEIGHT * scale)
-    scaled = pygame.transform.smoothscale(screen, (new_w, new_h))
+    scaled = pygame.transform.scale(screen, (new_w, new_h))
     real_screen.fill(BLACK)
     real_screen.blit(scaled, ((rw - new_w) // 2, (rh - new_h) // 2))
     pygame.display.flip()
@@ -43,7 +43,6 @@ def present():
 font_big = pygame.font.SysFont("consolas", 64, bold=True)
 font_med = pygame.font.SysFont("consolas", 32, bold=True)
 font_small = pygame.font.SysFont("consolas", 22)
-
 
 JUMP_BUTTON_RADIUS = 55
 JUMP_BUTTON_CENTER = (WIDTH - 90, HEIGHT - 90)
@@ -440,7 +439,6 @@ class Game:
                     pygame.quit()
                     return
 
-                # --- Entree clavier (fallback PC) ---
                 if event.type == pygame.KEYDOWN:
                     if state == "title" and event.key == pygame.K_RETURN:
                         self.reset()
@@ -451,7 +449,7 @@ class Game:
                     elif state == "over" and event.key == pygame.K_RETURN:
                         self.reset()
                         state = "play"
-                        
+
                 if event.type == pygame.FINGERDOWN:
                     tx = event.x * WIDTH
                     ty = event.y * HEIGHT
