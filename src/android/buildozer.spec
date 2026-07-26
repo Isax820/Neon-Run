@@ -9,7 +9,7 @@ package.domain = org.isax820
 source.dir = .
 source.include_exts = py,png,jpg,jpeg,ttf,ogg,wav
 
-version = 1.0
+version = 2026.7.26
 
 # --- Dependances Python ---
 # pas besoin de pypresence ici : le RPC Discord est deja

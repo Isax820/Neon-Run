@@ -22,13 +22,28 @@ RED = (255, 60, 60)
 GREEN = (60, 255, 120)
 ORANGE = (255, 140, 0)
 
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
+real_screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 pygame.display.set_caption("NEON RUN")
+screen = pygame.Surface((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
+
+
+def present():
+    """Redimensionne la surface de jeu 900x600 a la taille reelle de
+    l'ecran, en conservant les proportions (bandes noires si besoin),
+    puis affiche le resultat."""
+    rw, rh = real_screen.get_size()
+    scale = min(rw / WIDTH, rh / HEIGHT)
+    new_w, new_h = int(WIDTH * scale), int(HEIGHT * scale)
+    scaled = pygame.transform.smoothscale(screen, (new_w, new_h))
+    real_screen.fill(BLACK)
+    real_screen.blit(scaled, ((rw - new_w) // 2, (rh - new_h) // 2))
+    pygame.display.flip()
 
 font_big = pygame.font.SysFont("consolas", 64, bold=True)
 font_med = pygame.font.SysFont("consolas", 32, bold=True)
 font_small = pygame.font.SysFont("consolas", 22)
+
 
 JUMP_BUTTON_RADIUS = 55
 JUMP_BUTTON_CENTER = (WIDTH - 90, HEIGHT - 90)
@@ -436,7 +451,7 @@ class Game:
                     elif state == "over" and event.key == pygame.K_RETURN:
                         self.reset()
                         state = "play"
-
+                        
                 if event.type == pygame.FINGERDOWN:
                     tx = event.x * WIDTH
                     ty = event.y * HEIGHT
@@ -464,7 +479,7 @@ class Game:
                 screen.fill(BLACK)
                 self.stars.draw(screen)
                 self.screen_title(screen)
-                pygame.display.flip()
+                present()
 
             elif state == "play":
                 self.speed = 5.0 + self.score * 0.003
@@ -538,7 +553,7 @@ class Game:
                 self.draw_particles(screen)
                 self.draw_hud(screen)
                 draw_jump_button(screen)
-                pygame.display.flip()
+                present()
 
             elif state == "over":
                 screen.fill(BLACK)
@@ -555,7 +570,7 @@ class Game:
                 self.draw_hud(screen)
                 self.update_particles()
                 self.screen_game_over(screen)
-                pygame.display.flip()
+                present()
 
             await asyncio.sleep(0)
 
