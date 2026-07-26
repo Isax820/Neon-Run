@@ -3,10 +3,11 @@ name: Build APK
 on:
   # Lancement manuel depuis l'onglet "Actions" sur GitHub
   workflow_dispatch:
-  # Lancement automatique a chaque push touchant le dossier Android
+  # Lancement automatique a chaque push touchant le dossier Android ou les assets
   push:
     paths:
       - 'src/android/**'
+      - 'assets/**'
 
 jobs:
   build:
@@ -19,9 +20,11 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           image: kivy/buildozer:latest
-          options: -v ${{ github.workspace }}/src/android:/home/user/hostcwd
+          # On monte TOUT le repo (pas juste src/android), pour que
+          # assets/ (a la racine) soit aussi visible dans le conteneur.
+          options: -v ${{ github.workspace }}:/home/user/hostcwd
           run: |
-            cd /home/user/hostcwd
+            cd /home/user/hostcwd/src/android
 
             # Buildozer exige un point d'entree nomme exactement main.py
             # -> copie temporaire depuis main_android.py, uniquement

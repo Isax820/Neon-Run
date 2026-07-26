@@ -27,7 +27,9 @@ orientation = landscape
 fullscreen = 1
 
 # --- Icone et image de lancement ---
-icon.filename = %(source.dir)s/assets/icon_android.png
+# assets/ est a la racine du repo, alors que ce buildozer.spec vit
+# dans src/android -> on remonte de deux niveaux.
+icon.filename = %(source.dir)s/../../assets/icon_android.png
 # presplash.filename = %(source.dir)s/presplash.png
 
 # --- Permissions Android ---
