@@ -34,7 +34,9 @@ fullscreen = 1
 # assets/ est a la racine du repo, alors que ce buildozer.spec vit
 # dans src/android -> on remonte de deux niveaux.
 icon.filename = %(source.dir)s/../../assets/icon_android.png
-# presplash.filename = %(source.dir)s/presplash.png
+presplash.filename = %(source.dir)s/../../assets/icon_android.png
+# Couleur de fond derriere le presplash pendant le chargement
+android.presplash_color = #0A0A0F
 
 # --- Permissions Android ---
 # Neon Run ne fait ni reseau ni stockage externe, donc aucune

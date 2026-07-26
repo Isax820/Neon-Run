@@ -29,9 +29,6 @@ clock = pygame.time.Clock()
 
 
 def present():
-    """Redimensionne la surface de jeu 900x600 a la taille reelle de
-    l'ecran, en conservant les proportions (bandes noires si besoin),
-    puis affiche le resultat."""
     rw, rh = real_screen.get_size()
     scale = min(rw / WIDTH, rh / HEIGHT)
     new_w, new_h = int(WIDTH * scale), int(HEIGHT * scale)
@@ -128,9 +125,9 @@ class Player:
             self.jumps_left -= 1
             self.on_ground = False
 
-    def update(self, platforms):
-        self.vy += GRAVITY
-        self.y += self.vy
+    def update(self, platforms, dt_scale=1.0):
+        self.vy += GRAVITY * dt_scale
+        self.y += self.vy * dt_scale
         self.on_ground = False
 
         if self.y + self.h >= GROUND_Y:
@@ -142,7 +139,7 @@ class Player:
         for p in platforms:
             if (self.vy > 0 and
                     self.x + self.w > p.x and self.x < p.x + p.w and
-                    self.y + self.h >= p.y and self.y + self.h <= p.y + 20 + self.vy + 1):
+                    self.y + self.h >= p.y and self.y + self.h <= p.y + 20 + self.vy * dt_scale + 1):
                 self.y = p.y - self.h
                 self.vy = 0
                 self.on_ground = True
@@ -153,9 +150,9 @@ class Player:
             self.trail.pop(0)
 
         if self.invincible > 0:
-            self.invincible -= 1
+            self.invincible -= dt_scale
         if self.flash > 0:
-            self.flash -= 1
+            self.flash -= dt_scale
 
     def get_rect(self):
         return pygame.Rect(int(self.x), int(self.y), self.w, self.h)
@@ -207,8 +204,8 @@ class Obstacle:
         self.y = GROUND_Y - self.h
         self.speed = speed
 
-    def update(self):
-        self.x -= self.speed
+    def update(self, dt_scale=1.0):
+        self.x -= self.speed * dt_scale
 
     def get_rect(self):
         margin = 6
@@ -245,8 +242,8 @@ class Platform:
         self.speed = speed
         self.color = GREEN
 
-    def update(self):
-        self.x -= self.speed
+    def update(self, dt_scale=1.0):
+        self.x -= self.speed * dt_scale
 
     def draw(self, surface):
         rect = (int(self.x), int(self.y), self.w, self.h)
@@ -263,9 +260,9 @@ class Coin:
         self.angle = 0
         self.collected = False
 
-    def update(self):
-        self.x -= self.speed
-        self.angle += 4
+    def update(self, dt_scale=1.0):
+        self.x -= self.speed * dt_scale
+        self.angle += 4 * dt_scale
 
     def get_rect(self):
         return pygame.Rect(int(self.x) - self.r, int(self.y) - self.r, self.r * 2, self.r * 2)
@@ -323,13 +320,13 @@ class Game:
             life = random.randint(20, 40)
             self.particles.append([float(x), float(y), v.x, v.y, life, life, color])
 
-    def update_particles(self):
+    def update_particles(self, dt_scale=1.0):
         alive = []
         for p in self.particles:
-            p[0] += p[2]
-            p[1] += p[3]
-            p[3] += 0.2
-            p[4] -= 1
+            p[0] += p[2] * dt_scale
+            p[1] += p[3] * dt_scale
+            p[3] += 0.2 * dt_scale
+            p[4] -= dt_scale
             if p[4] > 0:
                 alive.append(p)
         self.particles = alive
@@ -432,6 +429,7 @@ class Game:
         state = "title"
         while True:
             dt = clock.tick(FPS)
+            dt_scale = min(3.0, dt / (1000.0 / FPS)) if dt > 0 else 1.0
             self.frame += 1
 
             for event in pygame.event.get():
@@ -481,41 +479,41 @@ class Game:
 
             elif state == "play":
                 self.speed = 5.0 + self.score * 0.003
-                self.distance += self.speed
-                self.score += self.speed * 0.05
+                self.distance += self.speed * dt_scale
+                self.score += self.speed * 0.05 * dt_scale
                 self.stars.update(self.speed)
 
-                self.spawn_timer += 1
+                self.spawn_timer += dt_scale
                 interval = max(30, int(80 - self.speed * 4))
                 if self.spawn_timer >= interval:
                     self.spawn_obstacle()
                     self.spawn_timer = 0
 
-                self.plat_timer += 1
+                self.plat_timer += dt_scale
                 if self.plat_timer >= random.randint(90, 160):
                     self.spawn_platform()
                     self.plat_timer = 0
 
-                self.coin_timer += 1
+                self.coin_timer += dt_scale
                 if self.coin_timer >= random.randint(60, 120):
                     self.spawn_coin()
                     self.coin_timer = 0
 
                 for obs in self.obstacles:
                     obs.speed = self.speed
-                    obs.update()
+                    obs.update(dt_scale)
                 for plat in self.platforms:
                     plat.speed = self.speed
-                    plat.update()
+                    plat.update(dt_scale)
                 for coin in self.coins:
                     coin.speed = self.speed
-                    coin.update()
+                    coin.update(dt_scale)
 
                 self.obstacles = [o for o in self.obstacles if o.x + o.w > -10]
                 self.platforms = [p for p in self.platforms if p.x + p.w > -10]
                 self.coins = [c for c in self.coins if c.x + c.r > -10 and not c.collected]
 
-                self.player.update(self.platforms)
+                self.player.update(self.platforms, dt_scale)
                 pr = self.player.get_rect()
 
                 if self.player.invincible == 0:
@@ -536,7 +534,7 @@ class Game:
                         self.score += 50
                         self.add_particles(coin.x, coin.y, YELLOW, 14)
 
-                self.update_particles()
+                self.update_particles(dt_scale)
 
                 screen.fill(BLACK)
                 self.stars.draw(screen)
@@ -566,7 +564,7 @@ class Game:
                 self.player.draw(screen)
                 self.draw_particles(screen)
                 self.draw_hud(screen)
-                self.update_particles()
+                self.update_particles(dt_scale)
                 self.screen_game_over(screen)
                 present()
 
