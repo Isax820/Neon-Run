@@ -26,8 +26,8 @@ requirements = python3==3.10.14,hostpython3==3.10.14,pygame
 orientation = landscape
 fullscreen = 1
 
-# --- Icone et image de lancement (optionnel, a adapter si tu en as) ---
-# icon.filename = %(source.dir)s/icon.png
+# --- Icone et image de lancement ---
+icon.filename = %(source.dir)s/assets/icon_android.png
 # presplash.filename = %(source.dir)s/presplash.png
 
 # --- Permissions Android ---
