@@ -1,6 +1,5 @@
 import pygame
 import random
-import sys
 import asyncio
 
 pygame.init()
@@ -516,7 +515,7 @@ class Game:
                 self.player.update(self.platforms, dt_scale)
                 pr = self.player.get_rect()
 
-                if self.player.invincible == 0:
+                if self.player.invincible <= 0:
                     for obs in self.obstacles:
                         if pr.colliderect(obs.get_rect()):
                             self.lives -= 1

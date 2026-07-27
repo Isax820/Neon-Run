@@ -9,7 +9,7 @@ package.domain = org.isax820
 source.dir = .
 source.include_exts = py,png,jpg,jpeg,ttf,ogg,wav
 
-version = 2026.7.26
+version = 2026.7.27
 
 # Empeche le calcul automatique (parfois casse) du versionCode Android
 # a partir de la version ci-dessus -> on le fixe nous-memes.

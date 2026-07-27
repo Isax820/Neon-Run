@@ -8,7 +8,9 @@ def run_rpc():
     
     try:
         RPC.connect()
-        
+
+        RPC.update()
+
         while True:
             time.sleep(15)
 
