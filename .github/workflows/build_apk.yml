@@ -1,9 +1,8 @@
-name: Build APK
+name: Build AAB
 
 on:
-  # Lancement manuel depuis l'onglet "Actions" sur GitHub
   workflow_dispatch:
-  # Lancement automatique a chaque push touchant le dossier Android ou les assets
+
   push:
     paths:
       - 'src/android/**'
@@ -12,31 +11,28 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout du repo
         uses: actions/checkout@v4
 
-      - name: Build APK avec l'image officielle Buildozer
+      - name: Build AAB avec Buildozer
         uses: addnab/docker-run-action@v3
         with:
           image: kivy/buildozer:latest
-          # On monte TOUT le repo (pas juste src/android), pour que
-          # assets/ (a la racine) soit aussi visible dans le conteneur.
           options: -v ${{ github.workspace }}:/home/user/hostcwd
           run: |
             cd /home/user/hostcwd/src/android
 
-            # Buildozer exige un point d'entree nomme exactement main.py
-            # -> copie temporaire depuis main_android.py, uniquement
-            #    dans le conteneur de build (ne touche pas le repo)
+            # Buildozer exige un point d'entrée nommé main.py
             cp main_android.py main.py
 
-            # "yes |" repond automatiquement aux prompts interactifs
-            # de Buildozer (avertissement root, licences SDK, etc.)
-            yes | buildozer android debug
+            # Génération du Android App Bundle
+            yes | buildozer android release
 
-      - name: Upload de l'APK genere
+      - name: Upload du AAB généré
         uses: actions/upload-artifact@v4
         with:
-          name: neon-run-apk
-          path: src/android/bin/*.apk
+          name: neon-run-aab
+          path: src/android/bin/*.aab
+          if-no-files-found: error
