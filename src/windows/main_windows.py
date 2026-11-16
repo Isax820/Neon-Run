@@ -2,8 +2,17 @@ import pygame
 import threading
 import random
 import sys
+import os
 
 from rpc import *
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "PyEx"))
+
+try:
+    import PyEx
+    PYEX_AVAILABLE = True
+except ImportError:
+    PYEX_AVAILABLE = False
 
 pygame.init()
 
@@ -24,9 +33,63 @@ RED     = (255, 60, 60)
 GREEN   = (60, 255, 120)
 ORANGE  = (255, 140, 0)
 
+game_context = {
+    "state": "title",            
+    "score": 0.0,
+    "high_score": 0.0,
+    "distance": 0.0,
+    "frame": 0,
+    "speed": 5.0,
+    "lives": 3,
+    "gravity": GRAVITY,
+    "jump_force": JUMP_FORCE,
+    "max_jumps": 2,
+    "width": WIDTH,
+    "height": HEIGHT,
+    "ground_y": GROUND_Y,
+    "game": None,           
+}
+
+
+def ctx_num(key, default, cast=float):
+    """Lit un nombre dans le contexte sans jamais planter si un mod y met n'importe quoi."""
+    try:
+        return cast(game_context.get(key, default))
+    except (TypeError, ValueError):
+        return default
+
+
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("NEON RUN")
 clock = pygame.time.Clock()
+
+if PYEX_AVAILABLE:
+    PyEx.boot(screen=screen, clock=clock, game_context=game_context, log_dir="logs")
+
+
+def mod_emit(name, data=None):
+    engine = PyEx.get_engine() if PYEX_AVAILABLE else None
+    if engine is not None:
+        engine.event_bus.emit(name, data or {})
+
+
+def mod_update(events, dt):
+    engine = PyEx.get_engine() if PYEX_AVAILABLE else None
+    if engine is None:
+        return events
+    free = []
+    for event in events:
+        consumed = engine.hooks.dispatch_event(event)
+        if event.type == pygame.QUIT or not consumed:
+            free.append(event)
+    engine.hooks.dispatch_update(dt)
+    return free
+
+
+def mod_draw(surface):
+    if PYEX_AVAILABLE:
+        PyEx.draw(surface)
+
 
 font_big   = pygame.font.SysFont("consolas", 64, bold=True)
 font_med   = pygame.font.SysFont("consolas", 32, bold=True)
@@ -81,7 +144,7 @@ class Player:
         self.y = float(GROUND_Y - self.h)
         self.vy = 0
         self.on_ground = True
-        self.jumps_left = 2
+        self.jumps_left = ctx_num("max_jumps", 2, int)
         self.trail = []
         self.alive = True
         self.invincible = 0
@@ -89,12 +152,18 @@ class Player:
 
     def jump(self):
         if self.jumps_left > 0:
-            self.vy = JUMP_FORCE if self.jumps_left == 2 else JUMP_FORCE * 0.85
+            force = ctx_num("jump_force", JUMP_FORCE)
+            first = self.jumps_left >= ctx_num("max_jumps", 2, int)
+            self.vy = force if first else force * 0.85
             self.jumps_left -= 1
             self.on_ground = False
+            return True
+        return False
 
     def update(self, platforms):
-        self.vy += GRAVITY
+        max_jumps = ctx_num("max_jumps", 2, int)
+
+        self.vy += ctx_num("gravity", GRAVITY)
         self.y += self.vy
         self.on_ground = False
 
@@ -102,7 +171,7 @@ class Player:
             self.y = GROUND_Y - self.h
             self.vy = 0
             self.on_ground = True
-            self.jumps_left = 2
+            self.jumps_left = max_jumps
 
         for p in platforms:
             if (self.vy > 0 and
@@ -111,7 +180,7 @@ class Player:
                 self.y = p.y - self.h
                 self.vy = 0
                 self.on_ground = True
-                self.jumps_left = 2
+                self.jumps_left = max_jumps
 
         self.trail.append((self.x + self.w // 2, self.y + self.h // 2))
         if len(self.trail) > 12:
@@ -248,10 +317,30 @@ class Coin:
 
 class Game:
     def __init__(self):
-
+        self.state = "title"            
         self.reset()
 
         self.high_score = 0
+
+        game_context["game"] = self     
+    def push_context(self):
+        game_context.update(
+            state=self.state, score=self.score, high_score=self.high_score,
+            distance=self.distance, frame=self.frame, speed=self.speed,
+            lives=self.lives,
+        )
+
+    def pull_context(self):
+        self.score = ctx_num("score", self.score)
+        self.lives = ctx_num("lives", self.lives, int)
+        self.speed = ctx_num("speed", self.speed)
+
+    def emit(self, name, data=None):
+        if not PYEX_AVAILABLE:
+            return
+        self.push_context()
+        mod_emit(name, data)
+        self.pull_context()
 
     def reset(self):
         self.player = Player()
@@ -395,40 +484,48 @@ class Game:
             draw_neon_text(surface, retry, font_med, GREEN, WIDTH//2 - rw//2, 420, glow=4)
 
     def run(self):
-        state = "title"
-
         while True:
             dt = clock.tick(FPS)
             self.frame += 1
 
-            for event in pygame.event.get():
+            if self.state == "play":
+                self.speed = 5.0 + self.score * 0.003
+
+            self.push_context()
+            events = mod_update(pygame.event.get(), dt / 1000.0)
+            self.pull_context()
+
+            for event in events:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
 
                 if event.type == pygame.KEYDOWN:
-                    if state == "title" and event.key == pygame.K_RETURN:
+                    if self.state == "title" and event.key == pygame.K_RETURN:
                         self.reset()
-                        state = "play"
+                        self.state = "play"
+                        self.emit("game.start")
 
-                    elif state == "play":
+                    elif self.state == "play":
                         if event.key in (pygame.K_SPACE, pygame.K_z, pygame.K_UP, pygame.K_w):
-                            self.player.jump()
+                            if self.player.jump():
+                                self.emit("game.jump", {"jumps_left": self.player.jumps_left})
 
-                    elif state == "over" and event.key == pygame.K_RETURN:
+                    elif self.state == "over" and event.key == pygame.K_RETURN:
                         self.reset()
-                        state = "play"
+                        self.state = "play"
+                        self.emit("game.start")
 
-            if state == "title":
+            if self.state == "title":
                 self.stars.update(2)
                 screen.fill(BLACK)
                 self.stars.draw(screen)
                 self.screen_title(screen)
+                mod_draw(screen)
                 pygame.display.flip()
                 continue
 
-            if state == "play":
-                self.speed = 5.0 + self.score * 0.003
+            if self.state == "play":
                 self.distance += self.speed
                 self.score += self.speed * 0.05
 
@@ -474,9 +571,11 @@ class Game:
                             self.player.invincible = 90
                             self.add_particles(pr.centerx, pr.centery, RED, 20)
                             self.obstacles.remove(obs)
+                            self.emit("game.hit", {"x": pr.centerx, "y": pr.centery, "kind": obs.kind})
                             if self.lives <= 0:
                                 self.high_score = max(self.high_score, self.score)
-                                state = "over"
+                                self.state = "over"
+                                self.emit("game.over", {"score": self.score, "best": self.high_score})
                             break
 
                 for coin in self.coins:
@@ -484,6 +583,7 @@ class Game:
                         coin.collected = True
                         self.score += 50
                         self.add_particles(coin.x, coin.y, YELLOW, 14)
+                        self.emit("game.coin", {"x": coin.x, "y": coin.y})
 
                 self.update_particles()
 
@@ -501,9 +601,10 @@ class Game:
                 self.player.draw(screen)
                 self.draw_particles(screen)
                 self.draw_hud(screen)
+                mod_draw(screen)
                 pygame.display.flip()
 
-            elif state == "over":
+            elif self.state == "over":
                 screen.fill(BLACK)
                 self.stars.draw(screen)
                 self.draw_ground(screen)
@@ -518,6 +619,7 @@ class Game:
                 self.draw_hud(screen)
                 self.update_particles()
                 self.screen_game_over(screen)
+                mod_draw(screen)
                 pygame.display.flip()
 
 if __name__ == "__main__":
